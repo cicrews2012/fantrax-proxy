@@ -20,31 +20,41 @@ export default async function handler(req, res) {
     console.log(`Fetching team rosters for league: ${leagueId}, period: ${period || 'current'}`);
     
     // Use official Fantrax API endpoint
-    let url = `https://www.fantrax.com/fxea/general/getTeamRosters?leagueId=${leagueId}`;
+    let rosterUrl = `https://www.fantrax.com/fxea/general/getTeamRosters?leagueId=${leagueId}`;
     if (period) {
-      url += `&period=${period}`;
+      rosterUrl += `&period=${period}`;
     }
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
+    // Also get league info for player names
+    const leagueInfoUrl = `https://www.fantrax.com/fxea/general/getLeagueInfo?leagueId=${leagueId}`;
     
-    if (!response.ok) {
-      console.error(`Fantrax API error: ${response.status} ${response.statusText}`);
-      const errorText = await response.text();
-      return res.status(response.status).json({ 
-        error: `Fantrax API returned ${response.status}`,
+    // Fetch both in parallel
+    const [rosterResponse, leagueResponse] = await Promise.all([
+      fetch(rosterUrl, { method: 'GET', headers: { 'Accept': 'application/json' } }),
+      fetch(leagueInfoUrl, { method: 'GET', headers: { 'Accept': 'application/json' } })
+    ]);
+    
+    if (!rosterResponse.ok) {
+      console.error(`Fantrax roster API error: ${rosterResponse.status}`);
+      const errorText = await rosterResponse.text();
+      return res.status(rosterResponse.status).json({ 
+        error: `Fantrax API returned ${rosterResponse.status}`,
         details: errorText
       });
     }
     
-    const data = await response.json();
-    console.log('Success! Roster data retrieved');
+    const rosterData = await rosterResponse.json();
+    const leagueData = leagueResponse.ok ? await leagueResponse.json() : {};
     
-    return res.status(200).json(data);
+    // Merge player info into roster data
+    const result = {
+      ...rosterData,
+      playerInfo: leagueData.playerInfo || leagueData.players || {}
+    };
+    
+    console.log('Success! Roster data retrieved with player info');
+    
+    return res.status(200).json(result);
     
   } catch (error) {
     console.error('Proxy error:', error);
