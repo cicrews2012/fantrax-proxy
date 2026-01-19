@@ -1,7 +1,7 @@
 // Fantrax API Proxy - Bypasses CORS restrictions
 export default async function handler(req, res) {
   // Enable CORS for your GitHub Pages site
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow all origins for testing
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   
@@ -10,25 +10,30 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
   
-  const { leagueId, method = 'getFantasyTeams' } = req.query;
+  const { leagueId, method = 'getRosters' } = req.query;
   
   if (!leagueId) {
     return res.status(400).json({ error: 'leagueId is required' });
   }
   
   try {
-    console.log(`Fetching ${method} for league: ${leagueId}`);
+    console.log(`Fetching rosters for league: ${leagueId}`);
     
+    // Try authenticated request with user credentials
     const response = await fetch('https://www.fantrax.com/fxpa/req', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cookie': `userSecretKey=vocazvbjlcp76mt9` // Authentication
       },
       body: JSON.stringify({
         msgs: [{
-          method: method,
-          data: { leagueId: leagueId }
+          method: 'getRosters',
+          data: { 
+            leagueId: leagueId,
+            view: 'STATS'
+          }
         }]
       })
     });
