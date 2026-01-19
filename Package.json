@@ -1,6 +1,7 @@
 {
   "name": "fantrax-proxy",
   "version": "1.0.0",
+  "type": "module",
   "description": "CORS proxy for Fantrax API",
   "main": "api/roster.js",
   "scripts": {
