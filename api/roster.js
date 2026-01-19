@@ -19,19 +19,19 @@ export default async function handler(req, res) {
   try {
     console.log(`Fetching team rosters for league: ${leagueId}, period: ${period || 'current'}`);
     
-    // Use official Fantrax API endpoint
+    // Use official Fantrax API endpoints
     let rosterUrl = `https://www.fantrax.com/fxea/general/getTeamRosters?leagueId=${leagueId}`;
     if (period) {
       rosterUrl += `&period=${period}`;
     }
     
-    // Also get league info for player names
-    const leagueInfoUrl = `https://www.fantrax.com/fxea/general/getLeagueInfo?leagueId=${leagueId}`;
+    // Get player IDs mapping for MLB
+    const playerIdsUrl = `https://www.fantrax.com/fxea/general/getPlayerIds?sport=MLB`;
     
     // Fetch both in parallel
-    const [rosterResponse, leagueResponse] = await Promise.all([
+    const [rosterResponse, playerIdsResponse] = await Promise.all([
       fetch(rosterUrl, { method: 'GET', headers: { 'Accept': 'application/json' } }),
-      fetch(leagueInfoUrl, { method: 'GET', headers: { 'Accept': 'application/json' } })
+      fetch(playerIdsUrl, { method: 'GET', headers: { 'Accept': 'application/json' } })
     ]);
     
     if (!rosterResponse.ok) {
@@ -44,15 +44,15 @@ export default async function handler(req, res) {
     }
     
     const rosterData = await rosterResponse.json();
-    const leagueData = leagueResponse.ok ? await leagueResponse.json() : {};
+    const playerIdsData = playerIdsResponse.ok ? await playerIdsResponse.json() : {};
     
-    // Merge player info into roster data
+    // Merge player names into roster data
     const result = {
       ...rosterData,
-      playerInfo: leagueData.playerInfo || leagueData.players || {}
+      playerNames: playerIdsData // This maps Fantrax IDs to player info including names
     };
     
-    console.log('Success! Roster data retrieved with player info');
+    console.log('Success! Roster data retrieved with player names');
     
     return res.status(200).json(result);
     
