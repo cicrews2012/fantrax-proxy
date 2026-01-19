@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
   
-  const { leagueId, method = 'getTeamRosters' } = req.query;
+  const { leagueId, method = 'getFantasyTeams' } = req.query;
   
   if (!leagueId) {
     return res.status(400).json({ error: 'leagueId is required' });
